@@ -37,6 +37,9 @@ if uploaded_file is not None:
     if st.button("Extract Contacts"):
         contacts = []
 
+        def clean(value):
+            return re.sub(r'\[\d+\]$', '', value.strip()) if isinstance(value, str) else value
+
         for _, row in df.iterrows():
             block = row[contact_column]
             if not isinstance(block, str) or "* First Name:" not in block:
@@ -47,11 +50,11 @@ if uploaded_file is not None:
                 entry = "* First Name:" + entry  # Restore removed split
 
                 contact = {
-                    'First Name': re.search(r'\* First Name:\s*(.*)', entry).group(1).strip() if re.search(r'\* First Name:\s*(.*)', entry) else "Not listed",
-                    'Last Name': re.search(r'\* Last Name:\s*(.*)', entry).group(1).strip() if re.search(r'\* Last Name:\s*(.*)', entry) else "Not listed",
-                    'Job Title': re.search(r'\* Job Title:\s*(.*)', entry).group(1).strip() if re.search(r'\* Job Title:\s*(.*)', entry) else "Not listed",
-                    'Phone': re.search(r'\* Phone:\s*(.*)', entry).group(1).strip() if re.search(r'\* Phone:\s*(.*)', entry) else "Not listed",
-                    'Email': re.search(r'\* Email:\s*(.*)', entry).group(1).strip() if re.search(r'\* Email:\s*(.*)', entry) else "Not listed"
+                    'First Name': clean(re.search(r'\* First Name:\s*(.*)', entry).group(1)) if re.search(r'\* First Name:\s*(.*)', entry) else "Not listed",
+                    'Last Name': clean(re.search(r'\* Last Name:\s*(.*)', entry).group(1)) if re.search(r'\* Last Name:\s*(.*)', entry) else "Not listed",
+                    'Job Title': clean(re.search(r'\* Job Title:\s*(.*)', entry).group(1)) if re.search(r'\* Job Title:\s*(.*)', entry) else "Not listed",
+                    'Phone': clean(re.search(r'\* Phone:\s*(.*)', entry).group(1)) if re.search(r'\* Phone:\s*(.*)', entry) else "Not listed",
+                    'Email': clean(re.search(r'\* Email:\s*(.*)', entry).group(1)) if re.search(r'\* Email:\s*(.*)', entry) else "Not listed"
                 }
 
                 # Merge in metadata
