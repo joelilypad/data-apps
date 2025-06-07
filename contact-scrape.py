@@ -7,7 +7,7 @@ st.title("📄 Contact Extractor from CSV")
 
 # 🧠 Prompt Format Reminder
 st.info("""
-Please ensure your prompt includes this formatting so contact data can be extracted cleanly:
+When generating your contact list, please includes this text in your prompt so contact data can be extracted cleanly:
 
 ```
 Please list them in the following format (one person per section):
