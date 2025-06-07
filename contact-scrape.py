@@ -3,11 +3,23 @@ import pandas as pd
 import re
 
 st.set_page_config(page_title="Contact Extractor", layout="wide")
+st.markdown("""
+<style>
+    .main { background-color: #f9f9f9; }
+    .stApp { font-family: 'Segoe UI', sans-serif; }
+    .block-container { padding-top: 2rem; }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📄 Contact Extractor from CSV")
+st.markdown("""
+Welcome to the Contact Extractor! This tool lets you upload a CSV file that contains AI-generated contact blocks and extracts structured contact data into a clean spreadsheet.
+""")
 
 # 🧠 Prompt Format Reminder
-st.info("""
-Please ensure your prompt includes this formatting so contact data can be extracted cleanly:
+with st.expander("🧠 Click here if you're generating the contact content via AI"):
+    st.markdown("""
+To ensure contact data can be extracted cleanly, please use the following prompt format:
 
 ```
 Please list them in the following format (one person per section):
@@ -21,20 +33,23 @@ If any information is not available, please write "Not listed".
 Please use this format exactly.
 ```
 
-This format ensures the tool can consistently parse each contact entry.
+✅ One contact per section  
+✅ Use consistent labels  
+✅ Avoid freeform text or summaries
 """)
 
 # File Upload
-uploaded_file = st.file_uploader("📄 Upload your CSV file", type="csv")
+uploaded_file = st.file_uploader("📤 Upload your CSV file", type="csv")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ File uploaded successfully!")
 
     # Column selector
-    contact_column = st.selectbox("📌 Select the column with contact info", df.columns)
+    st.markdown("### 🔍 Step 1: Select the column containing contact information")
+    contact_column = st.selectbox("Column to extract contacts from:", df.columns)
 
-    if st.button("Extract Contacts"):
+    if st.button("🚀 Extract Contacts"):
         contacts = []
 
         for _, row in df.iterrows():
@@ -61,9 +76,10 @@ if uploaded_file is not None:
         if contacts:
             results_df = pd.DataFrame(contacts)
             st.success(f"✅ Extracted {len(contacts)} contacts successfully!")
+            st.markdown("### 📋 Extracted Contacts Preview")
             st.dataframe(results_df)
 
             csv = results_df.to_csv(index=False).encode('utf-8')
-            st.download_button("⬇️ Download CSV", csv, "extracted_contacts.csv", "text/csv")
+            st.download_button("⬇️ Download Extracted Contacts as CSV", csv, "extracted_contacts.csv", "text/csv")
         else:
             st.warning("⚠️ No contacts found. Make sure the column follows the expected format.")
