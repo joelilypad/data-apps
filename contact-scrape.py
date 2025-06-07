@@ -38,7 +38,10 @@ if uploaded_file is not None:
         contacts = []
 
         def clean(value):
-            return re.sub(r'\[\d+\]$', '', value.strip()) if isinstance(value, str) else value
+            if not isinstance(value, str):
+                return value
+            # Remove all bracketed numbers like [1], [2], even mid-string
+            return re.sub(r'\[\d+\]', '', value).strip()
 
         for _, row in df.iterrows():
             block = row[contact_column]
