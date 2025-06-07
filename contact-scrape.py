@@ -7,8 +7,7 @@ st.title("📄 Contact Extractor from CSV")
 
 # 🧠 Prompt Format Reminder
 st.info("""
-**🧠 Note for prompt writers:**  
-If this file was generated using AI (e.g. ChatGPT), please ensure your prompt includes this formatting so contact data can be extracted cleanly:
+Please ensure your prompt includes this formatting so contact data can be extracted cleanly:
 
 ```
 Please list them in the following format (one person per section):
