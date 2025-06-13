@@ -25,9 +25,7 @@ Please use this format exactly.
 This format ensures the tool can consistently parse each contact entry.
 """)
 
-# ---------------------------------------------
-# 🔧 Utility functions
-# ---------------------------------------------
+# Utility Functions
 def clean(value):
     if not isinstance(value, str):
         return value
@@ -79,7 +77,7 @@ def match_pattern(first, last, email):
 def infer_patterns(df):
     district_patterns = defaultdict(list)
     for _, row in df.iterrows():
-        first, last, email, district = row['First Name'], row['Last Name'], row.get('Email'), row.get('District', '')
+        first, last, email, district = row['First Name'], row['Last Name'], row.get('Email'), row.get('Institution Name', '')
         match = match_pattern(first, last, email)
         if match:
             pattern, domain = match
@@ -100,42 +98,25 @@ def generate_speculative_emails(df):
     patterns_by_district = infer_patterns(df)
 
     speculative_emails = []
-    flags = []
-
     for _, row in df.iterrows():
         first = row['First Name']
         last = row['Last Name']
         email = row['Email']
-        district = row.get('District', '')
+        district = row.get('Institution Name', '')
 
-        if first in [None, "Not listed"] or last in [None, "Not listed"]:
-            speculative_emails.append("Not listed")
-            flags.append(False)
-            continue
-
-        if email and email != "Not listed":
+        if pd.notna(email) and email != "Not listed":
             speculative_emails.append(email)
-            flags.append(False)
-            continue
-
-        if district in patterns_by_district:
+        elif first != "Not listed" and last != "Not listed" and district in patterns_by_district:
             pattern, domain = patterns_by_district[district]
             user = generate_user_from_pattern(first, last, pattern)
-            if user:
-                speculative_emails.append(f"{user}@{domain}")
-                flags.append(True)
-                continue
+            speculative_emails.append(f"{user}@{domain}" if user else "Not listed")
+        else:
+            speculative_emails.append("Not listed")
 
-        speculative_emails.append("Not listed")
-        flags.append(False)
-
-    df["Email (Speculative)"] = speculative_emails
-    df["Speculative?"] = flags
+    df['Speculative Email'] = speculative_emails
     return df
 
-# ---------------------------------------------
-# 🚀 App logic
-# ---------------------------------------------
+# Streamlit UI
 uploaded_file = st.file_uploader("📄 Upload your CSV file", type="csv")
 
 if uploaded_file is not None:
@@ -155,27 +136,19 @@ if uploaded_file is not None:
             entries = re.split(r'\* First Name:', block)
             for entry in entries[1:]:
                 entry = "* First Name:" + entry
-
                 contact = {
                     'First Name': extract_field(r'\* First Name:\s*(.*?)\s*(?=\*|$)', entry),
                     'Last Name': extract_field(r'\* Last Name:\s*(.*?)\s*(?=\*|$)', entry),
                     'Job Title': extract_field(r'\* Job Title:\s*(.*?)\s*(?=\*|$)', entry),
                     'Phone': extract_field(r'\* Phone:\s*(.*?)\s*(?=\*|$)', entry),
-                    'Email': extract_field(r'\* Email:\s*(.*?)\s*(?=\*|$)', entry),
+                    'Email': extract_field(r'\* Email:\s*(.*?)\s*(?=\*|$)', entry)
                 }
-
-                # Include any metadata (e.g., District)
                 contact.update(row.drop(contact_column).to_dict())
                 contacts.append(contact)
 
         if contacts:
             results_df = pd.DataFrame(contacts)
-
-            # Optional speculative email generation
-            st.markdown("### ✨ Speculative Email Matching")
-            if st.checkbox("🤖 Fill missing emails based on name + district pattern", value=True):
-                results_df = generate_speculative_emails(results_df)
-
+            results_df = generate_speculative_emails(results_df)
             st.success(f"✅ Extracted {len(results_df)} contacts!")
             st.dataframe(results_df)
 
