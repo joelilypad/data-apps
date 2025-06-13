@@ -74,10 +74,16 @@ def match_pattern(first, last, email):
             return pattern, domain
     return None
 
+def extract_clean_email(raw_email):
+    raw = str(raw_email) if pd.notna(raw_email) else ""
+    match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", raw)
+    return match.group(0) if match else "Not listed"
+
 def infer_patterns(df):
     district_patterns = defaultdict(list)
     for _, row in df.iterrows():
-        first, last, email, district = row['First Name'], row['Last Name'], row.get('Email'), row.get('Institution Name', '')
+        first, last, district = row['First Name'], row['Last Name'], row.get('Institution Name', '')
+        email = extract_clean_email(row.get('Email'))
         match = match_pattern(first, last, email)
         if match:
             pattern, domain = match
@@ -89,7 +95,7 @@ def infer_patterns(df):
             continue
         pattern_counts = Counter([p for p, _ in entries])
         most_common_pattern = pattern_counts.most_common(1)[0][0]
-        domain = entries[0][1]  # assume same domain
+        domain = entries[0][1]
         dominant[district] = (most_common_pattern, domain)
     return dominant
 
@@ -101,10 +107,10 @@ def generate_speculative_emails(df):
     for _, row in df.iterrows():
         first = row['First Name']
         last = row['Last Name']
-        email = row['Email']
         district = row.get('Institution Name', '')
+        email = extract_clean_email(row.get('Email'))
 
-        if pd.notna(email) and email != "Not listed":
+        if email != "Not listed":
             speculative_emails.append(email)
         elif first != "Not listed" and last != "Not listed" and district in patterns_by_district:
             pattern, domain = patterns_by_district[district]
@@ -141,7 +147,7 @@ if uploaded_file is not None:
                     'Last Name': extract_field(r'\* Last Name:\s*(.*?)\s*(?=\*|$)', entry),
                     'Job Title': extract_field(r'\* Job Title:\s*(.*?)\s*(?=\*|$)', entry),
                     'Phone': extract_field(r'\* Phone:\s*(.*?)\s*(?=\*|$)', entry),
-                    'Email': extract_field(r'\* Email:\s*(.*?)\s*(?=\*|$)', entry)
+                    'Email': extract_clean_email(extract_field(r'\* Email:\s*(.*?)\s*(?=\*|$)', entry))
                 }
                 contact.update(row.drop(contact_column).to_dict())
                 contacts.append(contact)
